@@ -1,0 +1,32 @@
+____________________________________________________________________________
+[  1489] By: autrijus@autricvic                    on 2001/07/28 14:32:51
+	Log: * this be OurNet-Query v1.54.
+       Path: .
+	   ! Query.pm Site.pm Template.pm
+____________________________________________________________________________
+[  1488] By: autrijus@autricvic                    on 2001/07/28 14:32:05
+	Log: * fixes random context and quoting bugs.
+       Path: Site
+	   ! google.tt2
+       Path: bin
+	   ! sitequery
+____________________________________________________________________________
+[  1487] By: autrijus@autribsd                     on 2001/07/28 03:46:10
+	Log: * okay, this might get useful now. major cleanup.
+       Path: .
+	   ! Template.pm
+____________________________________________________________________________
+[  1486] By: autrijus@autribsd                     on 2001/07/27 13:04:34
+	Log: * major speedup for Template using $^N!
+       Path: .
+	   ! Template.pm
+____________________________________________________________________________
+[  1139] By: autrijus@autribsd                     on 2001/06/14 18:46:33
+	Log: * renaming directory in accord to package name change.
+       Path: Site
+	   google.tt2
+       Path: bin
+	   sitequery
+       Path: .
+	   Changes MANIFEST Makefile.PL Query.pm README Site.pm Template.pm
+	   WebBuilder.pm test.pl
