@@ -37,13 +37,12 @@ while (my ($site, $file) = each %sites) {
     }
 }
 
-
 sub callback {
     my %entry = @_;
     my $entry = \%entry;
 
     unless ($found{$entry{url}}++) {
-	print "[$entry->{title}]\n    => $entry->{url}\n";
+	print "[$entry->{title}]\n=> $entry->{url}\n";
     }
 }
 

@@ -1,5 +1,5 @@
 # $File: //depot/OurNet-Query/Site.pm $ $Author: autrijus $
-# $Revision: #3 $ $Change: 1500 $ $DateTime: 2001/08/02 00:03:12 $
+# $Revision: #4 $ $Change: 1923 $ $DateTime: 2001/09/28 15:12:04 $
 
 package OurNet::Site;
 require 5.005;
@@ -92,15 +92,30 @@ use fields qw/id charset proc expression template tempdata
 # -----------------
 # Package Constants
 # -----------------
-use constant PATH_SITE         => join('/', ('', split('::', __PACKAGE__), ''));
-use constant ERROR_SITE_NEEDED => __PACKAGE__ . ' needs a file';
-use constant ERROR_FILE_NEEDED => __PACKAGE__ . ' cannot find definition for ';
-use constant CHARSET_MAP       => { JIS  => 'ja-jp.jis', EUC  => 'ja-jp.euc',
-                                    BIG5 => 'zh-tw',     GB   => 'zh-cn' };
-use constant ENTITY_STRIP      => '<.*?>|^[\015\012\s]+|[\015\012\s]+$|\t';
-use constant ENTITY_MAP        => { nbsp => ' ', quot => '"', amp  => '&',
-                                    gt   => '>', lt   => '<', copy => '(c)' };
-use constant ENTITY_LIST       => '&('.join('|', keys(%{ENTITY_MAP()})).');';
+use constant PATH_SITE         =>
+    join('/', ('', split('::', __PACKAGE__), ''));
+
+use constant ERROR_SITE_NEEDED =>
+    __PACKAGE__ . ' needs a file';
+
+use constant ERROR_FILE_NEEDED =>
+    __PACKAGE__ . ' cannot find definition for ';
+
+use constant CHARSET_MAP       => {
+    JIS  => 'ja-jp.jis', EUC  => 'ja-jp.euc',
+    BIG5 => 'zh-tw',     GB   => 'zh-cn' 
+};
+
+use constant ENTITY_STRIP      =>
+    '</?\w[^>]*>|^[\015\012\s]+|[\015\012\s]+$|\t';
+
+use constant ENTITY_MAP        => {
+    nbsp => ' ', quot => '"', amp  => '&',
+    gt   => '>', lt   => '<', copy => '(c)' 
+};
+
+use constant ENTITY_LIST       =>
+    '&('.join('|', keys(%{ENTITY_MAP()})).');';
 
 # ---------------------
 # Subroutine new($site)
@@ -272,7 +287,17 @@ sub contemplate {
         # tt2 support goes here
         # XXX macros, etc incomplete
         my $result = $self->{tmplobj}->extract(undef, $content);
-        push @{$self->{response}}, @{$result->{entry}};
+
+        push @{$self->{response}}, map {
+            if (!$self->{allow_tags}) {
+		foreach my $key (keys(%{$_})) {
+		    $_->{$key} =~ s|@{[ENTITY_STRIP]}||gs;
+		    $_->{$key} =~ s|@{[ENTITY_LIST]}|ENTITY_MAP->{$1}|ge;
+		}
+            }
+	    $_;
+	} @{$result->{entry}};
+
         return $self;
     }
 
@@ -355,7 +380,9 @@ sub contemplate {
 
             my $compartment = Safe->new();
             $compartment->share(qw/$Myself/);
-            $compartment->permit_only(qw/:base_core :base_mem pushre regcmaybe regcreset regcomp/);
+            $compartment->permit_only(qw/
+		:base_core :base_mem pushre regcmaybe regcreset regcomp
+	    /);
 
             $proc =~ s|_(\w+)_|\$Myself->{response}[$rank - 1]{lc('$1')}|ig;
             $compartment->reval($proc);
@@ -387,6 +414,7 @@ sub callme {
     }
 
     if (defined $callback) {
+	print $data if $::DEBUG;
         return &$callback($herself, $self->contemplate($data));
     }
     else {
