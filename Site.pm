@@ -1,10 +1,10 @@
 # $File: //depot/OurNet-Query/Site.pm $ $Author: autrijus $
-# $Revision: #2 $ $Change: 1489 $ $DateTime: 2001/07/28 14:32:51 $
+# $Revision: #3 $ $Change: 1500 $ $DateTime: 2001/08/02 00:03:12 $
 
 package OurNet::Site;
 require 5.005;
 
-$OurNet::Site::VERSION = '1.54';
+$OurNet::Site::VERSION = '1.55';
 
 use strict;
 
@@ -76,7 +76,7 @@ Currently, tt2 does not (quite) support incremental parsing in
 conjunction with L<OurNet::Query>.
 
 Also, the XML spec of site descriptor is not well-formed, let alone
-of a complete DTD description.
+of a complete XML Schema or DTD description.
 
 =cut
 
@@ -95,11 +95,11 @@ use fields qw/id charset proc expression template tempdata
 use constant PATH_SITE         => join('/', ('', split('::', __PACKAGE__), ''));
 use constant ERROR_SITE_NEEDED => __PACKAGE__ . ' needs a file';
 use constant ERROR_FILE_NEEDED => __PACKAGE__ . ' cannot find definition for ';
-use constant CHARSET_MAP       => {'JIS'  => 'ja-jp.jis', 'EUC'  => 'ja-jp.euc',
-                                   'BIG5' => 'zh-tw',     'GB'   => 'zh-cn'};
+use constant CHARSET_MAP       => { JIS  => 'ja-jp.jis', EUC  => 'ja-jp.euc',
+                                    BIG5 => 'zh-tw',     GB   => 'zh-cn' };
 use constant ENTITY_STRIP      => '<.*?>|^[\015\012\s]+|[\015\012\s]+$|\t';
-use constant ENTITY_MAP        => {'nbsp' => ' ', 'quot' => '"', 'amp' => '&',
-                                   'gt' => '>', 'lt' => '<', 'copy' => '(c)'};
+use constant ENTITY_MAP        => { nbsp => ' ', quot => '"', amp  => '&',
+                                    gt   => '>', lt   => '<', copy => '(c)' };
 use constant ENTITY_LIST       => '&('.join('|', keys(%{ENTITY_MAP()})).');';
 
 # ---------------------
@@ -288,7 +288,7 @@ sub contemplate {
 
         my $rank = ($#{$self->{response}} + 2); # begins with 1
 
-        push(@{$self->{response}}, {'rank' => $rank});
+        push(@{$self->{response}}, { rank => $rank });
         my $entry = $self->{response}[$rank - 1];
         $entry->{id} = $self->{id};
 

@@ -1,10 +1,10 @@
 # $File: //depot/OurNet-Query/Template.pm $ $Author: autrijus $
-# $Revision: #4 $ $Change: 1489 $ $DateTime: 2001/07/28 14:32:51 $
+# $Revision: #5 $ $Change: 1498 $ $DateTime: 2001/08/02 00:02:46 $
 
 package OurNet::Template;
-require 5.005;
+use 5.006;
 
-$OurNet::Template::VERSION = '0.05';
+$OurNet::Template::VERSION = '0.06';
 
 use strict;
 use warnings;
@@ -78,9 +78,9 @@ ideas to me.
 
 =head1 BUGS
 
-The regular expression produced by L<extract> uses too much non-greedy
-operations, and the performance is I<really> slow. More aggresive use
-of (?>) and (?=) constructs should fix this.
+Nested capturing will sometimes suffer from off-by-one errors with perl 
+v5.7.1 or earlier; later versions supports the <$^N> variable and is
+exempt from such errors.
 
 There is no support for different I<PRE_CHOMP> and I<POST_CHOMP> settings 
 internally, so extraction could fail silently on wrong places.
@@ -88,6 +88,10 @@ internally, so extraction could fail silently on wrong places.
 =cut
 
 my ($params, $flagroot);
+
+sub generate {
+    die 'Template generation is not yet accomplished.';
+}
 
 sub extract {
     my ($self, $template, $document, $ext_param) = @_;
@@ -103,9 +107,10 @@ sub extract {
         });
     
         $parser->{ FACTORY } = ref($self).'::Extract';
-        $self->{regex} = $parser->parse(
-	    ref($template) eq 'SCALAR' ? $$template : $template
-	)->{ BLOCK };
+	$template = $$template if UNIVERSAL::isa($template, 'SCALAR');
+	$template =~ s/\n+$//;
+
+        $self->{regex} = $parser->parse($template)->{ BLOCK };
     }
 
     if ($document) {
@@ -115,8 +120,22 @@ sub extract {
     }
 }
 
+sub _validate {
+    my $vars = shift;
+    my $obj;
+
+    my ($flagnode, $lastvar) = _adjust($flagroot, @_);
+    $obj = (_adjust($params, @_))[0]->{$lastvar};
+    return unless UNIVERSAL::isa($obj, 'ARRAY');
+
+    @{$obj} = grep {
+	my $entry = $_;
+ 	scalar (grep { exists $entry->{$_} } @{$vars}) == scalar @{$vars};
+    } @{$obj};
+}
+
 sub _set {
-    my ($var, $val, $num, $pos) = splice(@_, 0, 4);
+    my ($var, $val, $num) = splice(@_, 0, 3);
     my $obj;
 
     if (@_) {
@@ -151,16 +170,20 @@ use strict;
 use warnings;
 
 my $count      = 0;
-my $ext_param = {};
+my $ext_param  = {};
 my $last_regex = '';
+my @vars;
 
 sub set_param { 
     $ext_param = $_[-1] if defined $_[-1];
 }
 
 sub template {
+    my $reg = $_[1];
+
     $count = 0;
-    return $_[1];
+    $reg =~ s/, \*\*//g; # this is safe because normal *s are escaped
+    return $reg;
 }
 
 sub block {
@@ -177,14 +200,13 @@ sub get {
     ++$count; # which capturing parenthesis is this?
 
     # ** is the placeholder for parent tree in foreach() 
-    $last_regex = "(?{_set($_[1], \$$count, $count, \$-[-1], **)})";
+    $last_regex = ($] >= 5.007002)
+	? "(?{_set($_[1], \$^N, $count, **)})"
+	: "(?{_set($_[1], \$$count, $count, **)})";
+
+    push @vars, $_[1];
 
     return "(.*?)";
-=begin comment FOR FUTURE USE (nested GET)
-	($] >= 5.007002) 
-	    ?  ("(?{_set($_[1], \$\^N, $count, \$-[-1], **)})")
-=end comment
-=cut
 }
 
 sub set {
@@ -212,6 +234,9 @@ sub textblock {
 sub foreach {
     my $reg = $_[4];
 
+    $last_regex = "(?{_validate([".join(',', @vars)."], $_[2])})";
+    undef @vars;
+
     $reg =~ s/\*\*/$_[2]/g; # this is safe because normal *s are escaped
     return "(?:$reg)*";
 }
@@ -226,7 +251,7 @@ sub quoted {
     foreach my $token (@{$_[1]}) {
         if ($token =~ m/^'(.+)'$/) { # nested hash traversal
             $output .= '$';
-            $output .= "{ $_ }" foreach split("','", $1);
+            $output .= "{$_}" foreach split("','", $1);
         }
         else {
             $output .= $token;
@@ -235,13 +260,12 @@ sub quoted {
     return $output;
 }
 
-sub AUTOLOAD { '' }
-
-=begin comment FOR DEBUG USE - tracking uncaptured directives
-use vars qw/$AUTOLOAD/;
+our $AUTOLOAD;
 
 sub AUTOLOAD {
-    use Data::Dumper;
+    return unless $::DEBUG;
+
+    require Data::Dumper;
     $Data::Dumper::Indent = 1;
 
     my $output = "\n$AUTOLOAD -";
@@ -254,15 +278,16 @@ sub AUTOLOAD {
     }
 
     print $output;
+
+    return '';
 }
-=end comment
-=cut
 
 1;
 
 package OurNet::Template::Generate;
 
 use strict;
+use warnings;
 
 1;
 

@@ -1,10 +1,10 @@
 # $File: //depot/OurNet-Query/Query.pm $ $Author: autrijus $
-# $Revision: #2 $ $Change: 1489 $ $DateTime: 2001/07/28 14:32:51 $
+# $Revision: #3 $ $Change: 1500 $ $DateTime: 2001/08/02 00:03:12 $
 
 package OurNet::Query;
 require 5.005;
 
-$OurNet::Query::VERSION = '1.54';
+$OurNet::Query::VERSION = '1.55';
 
 use strict;
 
@@ -37,14 +37,14 @@ OurNet::Query - Scriptable queries with template extraction
         my %entry = @_;
         my $entry = \%entry;
 
-        unless ($found{$entry{'url'}}) {
-            print "*** [$entry->{'title'}]" .
-                     " ($entry->{'score'})" .
-                   " - [$entry->{'id'}]\n"  .
-             "    URL: [$entry->{'url'}]\n";
+        unless ($found{$entry{url}}) {
+            print "*** [$entry->{title}]" .
+                     " ($entry->{score})" .
+                   " - [$entry->{id}]\n"  .
+             "    URL: [$entry->{url}]\n";
         }
 
-        $found{$entry{'url'}}++;
+        $found{$entry{url}}++;
     }
 
 =head1 DESCRIPTION
@@ -101,10 +101,10 @@ sub new {
                                : do { no strict 'refs';
                                       bless [\%{"$class\::FIELDS"}], $class };
 
-    $self->{'query'} = shift  or (warn(ERROR_QUERY_NEEDED), return);
-    $self->{'hits'}  = shift  or (warn(ERROR_HITS_NEEDED),  return);
-    $self->{'sites'} = [ @_ ] or (warn(ERROR_SITES_NEEDED), return);
-    $self->{'pua'}   = LWP::Parallel::UserAgent->new();
+    $self->{query} = shift  or (warn(ERROR_QUERY_NEEDED), return);
+    $self->{hits}  = shift  or (warn(ERROR_HITS_NEEDED),  return);
+    $self->{sites} = [ @_ ] or (warn(ERROR_SITES_NEEDED), return);
+    $self->{pua}   = LWP::Parallel::UserAgent->new();
 
     return $self;
 }
@@ -115,38 +115,38 @@ sub new {
 sub begin {
     my $self = shift;
 
-    $self->{'callback'} = ($_[0] ? $_[0] : $self->{'callback'})
+    $self->{callback} = ($_[0] ? $_[0] : $self->{callback})
         or (warn(ERROR_CALLBACK_NEEDED), return);
-    $self->{'timeout'}  = ($_[1] ? $_[1] : $self->{'timeout'});
-    $self->{'pua'}->initialize();
+    $self->{timeout}  = ($_[1] ? $_[1] : $self->{timeout});
+    $self->{pua}->initialize();
 
-    foreach my $count (0 .. $#{$self->{'sites'}}) {
-        $self->{'bots'}[$count] = OurNet::Site->new(
-	    $self->{'sites'}[$count]
+    foreach my $count (0 .. $#{$self->{sites}}) {
+        $self->{bots}[$count] = OurNet::Site->new(
+	    $self->{sites}[$count]
 	);
 
-        my $siteurl = $self->{'bots'}[$count]->geturl(
-	    $self->{'query'}, $self->{'hits'}
+        my $siteurl = $self->{bots}[$count]->geturl(
+	    $self->{query}, $self->{hits}
 	);
 
-        my $request = ($siteurl =~ m|^post:(.+?)\?(.+)|)
+        my $request = ($siteurl =~ m|^post:([^\?]+)\?(.+)|)
                     ? POST("http:$1", [split('[&;=]', $2)])
                     : GET($siteurl)
             or (warn(ERROR_PROTOCOL_UNDEF), return);
 
         # Closure is not something that most Perl programmers need
         # trouble themselves about to begin with. (perlref.pod)
-        $self->{'pua'}->register($request, sub {
-            $self->{'bots'}[$count]->callme($self, $count,
+        $self->{pua}->register($request, sub {
+            $self->{bots}[$count]->callme($self, $count,
                                             $_[0], \&callmeback);
             return;
         });
     }
 
-    $self->{'found'} = 0;
-    $self->{'pua'}->wait($self->{'timeout'});
+    $self->{found} = 0;
+    $self->{pua}->wait($self->{timeout});
 
-    return $self->{'found'};
+    return $self->{found};
 }
 
 # --------------------------------------
@@ -155,12 +155,12 @@ sub begin {
 sub callmeback {
     my ($self, $himself) = @_;
 
-    foreach my $entry (@{$himself->{'response'}}) {
-    	if (exists($entry->{'url'})) {
-            &{$self->{'callback'}}(%{$entry});
-            delete($entry->{'url'});
+    foreach my $entry (@{$himself->{response}}) {
+    	if (exists($entry->{url})) {
+            &{$self->{callback}}(%{$entry});
+            delete($entry->{url});
 
-            $self->{'found'}++;
+            $self->{found}++;
         }
     }
 }

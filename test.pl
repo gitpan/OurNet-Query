@@ -24,7 +24,10 @@ while (my ($site, $file) = each %sites) {
     # Generate a new Query object
     ok(my $query = OurNet::Query->new($query, $hits, $file));
 
-    if (inet_aton('google.com')) {
+    if ($] < 5.006) {
+	skip('tt2 query not tested on v5.5 and before.', 1);
+    }
+    elsif (inet_aton('google.com')) {
 	# Perform a query
 	my $found = $query->begin(\&callback, 30); # Timeout after 30 seconds
 	ok($found);

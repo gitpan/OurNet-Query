@@ -1,4 +1,29 @@
 ____________________________________________________________________________
+[  1500] By: autrijus@autribsd                     on 2001/08/02 00:03:12
+	Log: * This be OurNet::Query v1.55.
+       Path: .
+	   ! MANIFEST Query.pm Site.pm test.pl
+____________________________________________________________________________
+[  1499] By: autrijus@autribsd                     on 2001/08/02 00:03:01
+	Log: * google.tt2 wasn't installing itself!
+       Path: Site
+	   - google.tt2
+       Path: lib
+	   + OurNet/Site/google.tt2
+____________________________________________________________________________
+[  1498] By: autrijus@autribsd                     on 2001/08/02 00:02:46
+	Log: * improved _validate() routine to eliminate partial matches
+	     * fixed the bug affecting GET not inside a FOREACH
+	     * AUTOLOAD now display debug message under $::DEBUG
+	     * Template.pm is now 5.6 specific
+       Path: .
+	   ! Template.pm
+____________________________________________________________________________
+[  1493] By: autrijus@autricvic                    on 2001/08/01 00:55:57
+	Log: * Changes update.
+       Path: .
+	   ! Changes
+____________________________________________________________________________
 [  1489] By: autrijus@autricvic                    on 2001/07/28 14:32:51
 	Log: * this be OurNet-Query v1.54.
        Path: .
